@@ -15,8 +15,8 @@ def env_bool(name: str, default: bool = False) -> bool:
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key-change-me")
 DEBUG = env_bool("DJANGO_DEBUG", True)
 
-allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").strip()
-ALLOWED_HOSTS = [h.strip() for h in allowed_hosts.split(",") if h.strip()] or ["*"]
+allowed_hosts =  ['*']
+ALLOWED_HOSTS = ["*"]
 
 
 INSTALLED_APPS = [
