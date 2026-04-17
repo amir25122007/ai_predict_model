@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Image Classification</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg-1: #0b1020;
+        --bg-2: #151c33;
+        --card: rgba(255, 255, 255, 0.12);
+        --card-border: rgba(255, 255, 255, 0.22);
+        --text-main: #f5e7a1;
+        --text-soft: #e8dc9f;
+      }
+
+      body {
+        min-height: 100vh;
+        color: var(--text-main);
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background:
+          radial-gradient(1200px 700px at 8% -10%, rgba(99, 102, 241, 0.35), transparent 60%),
+          radial-gradient(1000px 600px at 90% 10%, rgba(16, 185, 129, 0.25), transparent 60%),
+          linear-gradient(145deg, var(--bg-1), var(--bg-2));
+      }
+
+      .page-title {
+        font-size: clamp(1.7rem, 3vw, 2.5rem);
+        letter-spacing: 0.2px;
+      }
+
+      .soft-text {
+        color: var(--text-soft);
+      }
+
+      .beige-text {
+        color: var(--text-main) !important;
+      }
+
+      .text-white-50 {
+        color: rgba(232, 220, 159, 0.82) !important;
+      }
+
+      .glass-card {
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(14px);
+      }
+
+      .form-control,
+      .form-control:focus {
+        background: rgba(255, 255, 255, 0.92);
+        border-color: rgba(255, 255, 255, 0.8);
+        box-shadow: none;
+      }
+
+      .upload-btn {
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #070b18, #0f172a);
+        box-shadow: none;
+        transition: transform 0.15s ease, box-shadow 0.2s ease;
+      }
+
+      .upload-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: none;
+      }
+
+      .preview-wrap {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        background: rgba(255, 255, 255, 0.06);
+        padding: 10px;
+      }
+
+      .preview {
+        max-height: 300px;
+        width: 100%;
+        object-fit: contain;
+        border-radius: 12px;
+      }
+
+      .result-card {
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .result-badge {
+        background: rgba(245, 231, 161, 0.18);
+        border: 1px solid rgba(245, 231, 161, 0.4);
+        color: var(--text-main);
+      }
+      .result-badge.demo {
+        background: rgba(250, 204, 21, 0.18);
+        border-color: rgba(250, 204, 21, 0.45);
+      }
+      .result-badge.real {
+        background: rgba(16, 185, 129, 0.18);
+        border-color: rgba(16, 185, 129, 0.45);
+      }
+
+      .mono {
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container py-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="mb-4 text-center">
+            <h1 class="fw-bold page-title mb-2">AI Image Prediction</h1>
+            <div class="soft-text">
+              Загрузите изображение и получите предсказание от демо-модели
+            </div>
+          </div>
+
+          <div class="card glass-card rounded-4">
+            <div class="card-body p-4 p-md-5">
+              <form id="uploadForm" class="row g-3" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="col-12">
+                  <label class="form-label fw-semibold beige-text">Название фото</label>
+                  <input
+                    class="form-control form-control-lg"
+                    type="text"
+                    name="title"
+                    id="titleInput"
+                    placeholder="Например: Витрина магазина с текстом"
+                  />
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label fw-semibold beige-text">Описание</label>
+                  <textarea
+                    class="form-control"
+                    name="description"
+                    id="descriptionInput"
+                    rows="3"
+                    placeholder="Кратко опишите, что изображено на фото"
+                  ></textarea>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label fw-semibold beige-text">Выберите изображение</label>
+                  <input
+                    class="form-control form-control-lg"
+                    type="file"
+                    name="image"
+                    id="imageInput"
+                    accept="image/png,image/jpeg"
+                    required
+                  />
+                  <div class="form-text text-white-50">Поддерживаются только JPG/JPEG/PNG. Файл не сохраняется на диск.</div>
+                </div>
+
+                <div class="col-12">
+                  <div id="previewBox" class="preview-wrap d-none">
+                    <img id="preview" class="preview" alt="preview" />
+                  </div>
+                </div>
+
+                <div class="col-12 d-flex align-items-center gap-3">
+                  <button id="submitBtn" class="btn upload-btn text-white btn-lg px-4" type="submit">
+                    Получить предсказание
+                  </button>
+                  <div id="loading" class="d-none align-items-center gap-2">
+                    <div class="spinner-border spinner-border-sm text-info" role="status" aria-hidden="true"></div>
+                    <div class="soft-text">Обработка...</div>
+                  </div>
+                </div>
+              </form>
+
+              <hr class="my-4 border-light border-opacity-25" />
+
+              <div id="message" class="alert d-none" role="alert"></div>
+
+              <div id="resultCard" class="card result-card d-none">
+                <div class="card-body p-4">
+                  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div class="fw-semibold beige-text">Результат</div>
+                    <span id="modelBadge" class="badge rounded-pill result-badge">MODE: UNKNOWN</span>
+                  </div>
+                  <div class="mt-3">
+                    <div class="soft-text mb-1 beige-text">Класс</div>
+                    <div id="label" class="fs-4 fw-semibold beige-text"></div>
+                  </div>
+                  <div class="mt-3">
+                    <div class="soft-text mb-1">Условная вероятность</div>
+                    <div id="prob" class="mono beige-text"></div>
+                  </div>
+                  <div id="modelInfo" class="soft-text small mt-3"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="soft-text small mt-4 text-center">
+            API endpoint: <span class="mono">/api/predict/</span> (POST)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
+      }
+
+      const imageInput = document.getElementById("imageInput");
+      const preview = document.getElementById("preview");
+      const previewBox = document.getElementById("previewBox");
+      const titleInput = document.getElementById("titleInput");
+      const descriptionInput = document.getElementById("descriptionInput");
+      const uploadForm = document.getElementById("uploadForm");
+      const loading = document.getElementById("loading");
+      const submitBtn = document.getElementById("submitBtn");
+      const message = document.getElementById("message");
+      const resultCard = document.getElementById("resultCard");
+      const labelEl = document.getElementById("label");
+      const probEl = document.getElementById("prob");
+      const modelBadge = document.getElementById("modelBadge");
+      const modelInfo = document.getElementById("modelInfo");
+
+      function showMessage(kind, text) {
+        message.className = `alert alert-${kind}`;
+        message.textContent = text;
+        message.classList.remove("d-none");
+      }
+
+      function clearMessage() {
+        message.classList.add("d-none");
+        message.textContent = "";
+      }
+
+      function setLoading(isLoading) {
+        if (isLoading) {
+          loading.classList.remove("d-none");
+          loading.classList.add("d-flex");
+          submitBtn.disabled = true;
+        } else {
+          loading.classList.add("d-none");
+          loading.classList.remove("d-flex");
+          submitBtn.disabled = false;
+        }
+      }
+
+      imageInput.addEventListener("change", () => {
+        clearMessage();
+        resultCard.classList.add("d-none");
+
+        const file = imageInput.files && imageInput.files[0];
+        if (!file) {
+          previewBox.classList.add("d-none");
+          preview.src = "";
+          return;
+        }
+
+        if (!file.type.startsWith("image/")) {
+          showMessage("warning", "Выбранный файл не является изображением.");
+          imageInput.value = "";
+          previewBox.classList.add("d-none");
+          preview.src = "";
+          return;
+        }
+
+        const url = URL.createObjectURL(file);
+        preview.src = url;
+        previewBox.classList.remove("d-none");
+      });
+
+      uploadForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearMessage();
+        resultCard.classList.add("d-none");
+
+        const file = imageInput.files && imageInput.files[0];
+        if (!file) {
+          showMessage("warning", "Сначала выберите изображение.");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("image", file);
+        formData.append("title", titleInput.value || "");
+        formData.append("description", descriptionInput.value || "");
+
+        setLoading(true);
+        try {
+          const resp = await fetch("/api/predict/", {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": getCookie("csrftoken"),
+            },
+            body: formData,
+          });
+
+          const data = await resp.json().catch(() => null);
+          if (!data) {
+            showMessage("danger", "Не удалось прочитать ответ сервера.");
+            return;
+          }
+
+          if (!resp.ok || !data.ok) {
+            showMessage("danger", data.error || "Ошибка запроса.");
+            return;
+          }
+
+          labelEl.textContent = data.label;
+          const p = Number(data.probability);
+          probEl.textContent = Number.isFinite(p) ? `${(p * 100).toFixed(2)}%` : String(data.probability);
+          const mode = String(data.model_mode || "UNKNOWN").toUpperCase();
+          modelBadge.textContent = `MODE: ${mode}`;
+          modelBadge.classList.remove("demo", "real");
+          if (mode === "DEMO") modelBadge.classList.add("demo");
+          if (mode === "REAL") modelBadge.classList.add("real");
+          modelInfo.textContent = data.model_message || "";
+          resultCard.classList.remove("d-none");
+        } catch (err) {
+          showMessage("danger", "Сетевая ошибка. Попробуйте ещё раз.");
+        } finally {
+          setLoading(false);
+        }
+      });
+    </script>
+  </body>
+</html>
+
