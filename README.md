@@ -9,3 +9,9 @@ https://github.com/mycetist/rwb-hack
 pip install -r requiremnets.txt
 python3 manage.py runserver
 ```
+
+# Разработчики
+Брусенцев Александр 
+Клочков Дмитрий
+Антон Архипов
+Идиатулин Амир
